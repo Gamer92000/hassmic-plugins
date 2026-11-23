@@ -142,9 +142,13 @@ jobs:
           HASSMIC: siblings/echo-dot-assist
           TEMPLATE: siblings/hassmic-plugin-template
           MWW: siblings/hassmic-plugin-microwakeword
+        # (both run whatever the first says: a sibling's file not there yet fails the reading list, and the
+        # references are still shown)
         run: |
-          python3 tests/test_reading.py --require
-          python3 tests/test_references.py --require
+          r=0
+          python3 tests/test_reading.py --require || r=1
+          python3 tests/test_references.py --require || r=1
+          exit $r
 
   # A pull request: each community version the published site does not have, its program run in the harness.  A
   # stranger's program: no secret, no token that writes, no token in the checkout, and all it gives is its log

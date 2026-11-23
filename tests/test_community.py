@@ -344,7 +344,9 @@ if USERNS:
     check("more than 1 s" in why and took < 5, f"the wall clock: ended after {took:.1f} s ({why})")
     grow = os.path.join(top, "grow")
     os.makedirs(grow)
-    code, why, took = bounded_run(f"while :; do head -c 1048576 /dev/zero > {grow}/$$.$RANDOM$RANDOM; done", watch=grow, watch_max=8 << 20, watch_files=100000)
+    # (a file a MB, each of its own name by a counter: sh is POSIX's, Ubuntu's dash, which has no $RANDOM, and a name
+    # of $RANDOM's wrote one file over and over there, never more than 1 MB: the run of cc64177 on GitHub's runner)
+    code, why, took = bounded_run(f"i=0; while :; do i=$((i + 1)); head -c 1048576 /dev/zero > {grow}/$i; done", watch=grow, watch_max=8 << 20, watch_files=100000)
     check("grew past 8 MB" in why and took < 10, f"its folder's bytes: ended at 8 MB ({why}, {took:.1f} s)")
     shutil.rmtree(grow)
     _lim = dict(sandbox.LIMITS["probe"])

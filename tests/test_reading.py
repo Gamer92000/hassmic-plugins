@@ -53,13 +53,20 @@ for env, name, files in (("HASSMIC", "echo-dot-assist", ["docs/plugins.md", "doc
                          ("MWW", "hassmic-plugin-microwakeword", ["README.md", ".github/workflows/release.yml"])):
     places.append((os.environ.get(env) or os.path.join(UP, name), f"{name} ({env})", files))
 for tree, name, files in places:
-    if not all(os.path.isfile(os.path.join(tree, f)) for f in files):
+    if not all(os.path.isfile(os.path.join(tree, f)) for f in files) and (not os.path.isdir(tree) or not REQUIRE):
         if REQUIRE:
             check(False, f"{name}: not at {tree} (--require: its copies of the reading list have to be checked)")
         else:
             print(f"skip {name}: not at {tree} (its copies of the reading list are not checked here)")
         continue
     for f in files:
+        # (--require, the tree there without the file: the branch checked out does not have it, which index.yml's
+        # sparse checkout lets pass; said as that, never as a tree not there, and the tree's other copies checked:
+        # echo-dot-assist's main before the plugin work was pushed had docs/SECURITY.md and no docs/plugins.md)
+        if not os.path.isfile(os.path.join(tree, f)):
+            check(False, f"{name} {f}: not in {tree}, which is there: the branch checked out does not have this file "
+                         "(not pushed there yet, or moved; --require: its copy of the reading list has to be checked)")
+            continue
         got = sentence(os.path.join(tree, f))
         if got is not None and canon is not None and got != canon:
             i = next((i for i, (x, y) in enumerate(zip(got, canon)) if x != y), min(len(got), len(canon)))

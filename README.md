@@ -399,7 +399,7 @@ against the published site, `tools/published.sh`; a pull request's with `STRICT=
 attestation that holds fails it), and `siblings`: the reading list's eight copies, the template's and microWakeWord's
 workflows read as the index reads them and their copies of the reader held to its text, those three repositories
 checked out beside it (their default branches, those files alone, no credentials; `--require`: a copy not there
-fails), in a job no other waits for: a sibling's branch moves when it likes, and its failure is shown on the run but
+fails, named per file, and both checks run whatever the first says), in a job no other waits for: a sibling's branch moves when it likes, and its failure is shown on the run but
 never holds back a publish. A pull request also gets `smoke`: the harness over the community versions the published site does not have, in
 a job with no secret, no token and no write permission, which no other job waits for. A push to `main` publishes the
 whole site in a job with the index key (secret `INDEX_SIGNING_KEY` of the environment `index`, which admits `main`

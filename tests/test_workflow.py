@@ -265,11 +265,12 @@ check(set(sib) == set(SIBLINGS) and all(set(x["with"]) == {"repository", "path",
 own = [x for x in cst if "actions/checkout" in str(x.get("uses")) and not (x.get("with") or {}).get("repository")]
 check(len(own) == 1 and own[0].get("with") == {"persist-credentials": "false"}, "siblings checks this repository out too, no credentials left")
 rd = [x for x in cst if "test_reading.py" in str(x.get("run"))]
-check(len(rd) == 1 and rd[0].get("run", "").split("\n") == ["python3 tests/test_reading.py --require", "python3 tests/test_references.py --require"]
+check(len(rd) == 1 and rd[0].get("run", "").split("\n") == ["r=0", "python3 tests/test_reading.py --require || r=1",
+                                                       "python3 tests/test_references.py --require || r=1", "exit $r"]
       and rd[0].get("env") == {"HASSMIC": SIBLINGS["Gamer92000/echo-dot-assist"][0], "TEMPLATE": SIBLINGS["Gamer92000/hassmic-plugin-template"][0],
                                "MWW": SIBLINGS["Gamer92000/hassmic-plugin-microwakeword"][0]}
       and set(rd[0]) == {"name", "env", "run"} and all(cst.index(x) < cst.index(rd[0]) for x in sib.values()),
-      "siblings runs the reading list's check and the references' over those trees with --require, after their checkouts, no if:")
+      "siblings runs the reading list's check and the references' over those trees with --require, both whatever the first says, after their checkouts, no if:")
 check(sbl is not None and "if" not in sbl and not any("siblings" in needs(j) for j in jobs.values()) and not needs(sbl)
       and "secrets." not in str(sbl) and "environment" not in sbl and "permissions" not in sbl and "token" not in str(sbl).lower(),
       "siblings runs for every push and pull request, no job needs it (publish never waits on a sibling's branch), no secret, no environment, no token")
