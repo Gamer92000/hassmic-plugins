@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:">
+<meta name="referrer" content="no-referrer">
+<title>hassmic plugins</title>
+<meta name="description" content="Plugins for hassmic, which turns Amazon Echos into Home Assistant voice satellites: what each may do, and its package to download.">
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --text: #16191d; --dim: #5d6672; --line: #dfe3e8; --accent: #0b6bcb;
+  --accent-text: #ffffff; --official: #0f7b4f; --official-bg: #e3f4ec; --community: #8a5a00; --community-bg: #fbf0d9;
+  --warn: #9c3d00; --warn-bg: #fdeee3; --bad: #a3122a; --bad-bg: #fbe5e9; --code: #eef0f3;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111418; --card: #1a1e24; --text: #e6e9ed; --dim: #9aa4b0; --line: #2c323a; --accent: #4fa3ff;
+    --accent-text: #0b1520; --official: #5fd39e; --official-bg: #13301f; --community: #f0c060; --community-bg: #322710;
+    --warn: #ffb27a; --warn-bg: #33200f; --bad: #ff8a9b; --bad-bg: #3a1219; --code: #232932;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main, .top-inner, footer { max-width: 860px; margin: 0 auto; padding: 0 16px; }
+a { color: var(--accent); }
+code { font: 0.86em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--code);
+  padding: 0.1em 0.35em; border-radius: 4px; overflow-wrap: anywhere; }
+.top { background: var(--card); border-bottom: 1px solid var(--line); padding: 28px 0 20px; }
+h1 { margin: 0 0 4px; font-size: 1.7rem; letter-spacing: -0.01em; }
+.lead { margin: 0 0 18px; color: var(--dim); max-width: 62ch; }
+.search { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.search input { flex: 1 1 260px; font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg); color: var(--text); }
+.search input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.chips { display: flex; gap: 6px; }
+.chips button { font: inherit; font-size: 0.9rem; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--text); cursor: pointer; }
+.chips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.count { color: var(--dim); font-size: 0.9rem; margin: 18px 0 10px; }
+.plugin { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin: 0 0 14px; }
+.plugin header { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
+.plugin h2 { margin: 0; font-size: 1.25rem; }
+.plugin h2 a { color: inherit; text-decoration: none; }
+.plugin h2 a:hover { text-decoration: underline; }
+.tier { font-size: 0.78rem; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+.tier.official { color: var(--official); background: var(--official-bg); }
+.tier.community { color: var(--community); background: var(--community-bg); }
+.desc { margin: 8px 0 4px; }
+.who, .dim { color: var(--dim); }
+.who { font-size: 0.92rem; margin: 0 0 12px; }
+.small { font-size: 0.82rem; }
+.none { color: var(--dim); font-style: italic; margin: 6px 0 0; }
+.version { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+.vhead { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.vname { font-weight: 600; }
+.meta { color: var(--dim); font-size: 0.88rem; }
+.get { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin: 10px 0; }
+.download { display: inline-block; background: var(--accent); color: var(--accent-text); text-decoration: none;
+  padding: 8px 14px; border-radius: 8px; font-weight: 600; }
+.download:hover { filter: brightness(1.08); }
+.sha { font-size: 0.82rem; color: var(--dim); display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; min-width: 0; }
+.copy { font: inherit; font-size: 0.78rem; padding: 2px 8px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--bg); color: var(--text); cursor: pointer; }
+.said { margin: 10px 0 4px; font-size: 0.92rem; }
+.caps { margin: 0 0 8px; padding: 0; list-style: none; }
+.caps li { padding: 4px 0 4px 12px; border-left: 3px solid var(--line); margin: 3px 0; }
+.caps li.loud { border-left-color: var(--warn); }
+.cap { display: inline-block; font: 0.78rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--dim);
+  min-width: 7.5em; }
+@media (max-width: 560px) { .cap { display: block; min-width: 0; } .sha code { word-break: break-all; } }
+.speaks { margin: 6px 0 0; font-size: 0.85rem; }
+.flag { background: var(--warn-bg); color: var(--warn); padding: 8px 12px; border-radius: 8px; margin: 10px 0; }
+.withdrawn { background: var(--bad-bg); color: var(--bad); padding: 8px 12px; border-radius: 8px; margin: 10px 0; }
+details { margin-top: 10px; }
+summary { cursor: pointer; color: var(--accent); }
+.howto { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 4px 20px 10px; margin: 26px 0 14px; }
+.howto h2 { font-size: 1.1rem; }
+.howto ol { padding-left: 1.3em; }
+.howto li { margin: 4px 0; }
+footer { color: var(--dim); font-size: 0.85rem; padding-bottom: 40px; }
+.hidden { display: none; }
+#empty { color: var(--dim); }
+</style>
+</head>
+<body>
+<div class="top"><div class="top-inner">
+<h1>hassmic plugins</h1>
+<p class="lead">Programs that run beside <a href="https://github.com/Gamer92000/echo-dot-assist" rel="noopener">hassmic</a>
+on an Echo, each in a sandbox, with only the powers you accept with the Echo's action button.
+Plugins are experimental: switch them on under Plugins on the Echo's settings page.</p>
+<div class="search" role="search">
+<input id="q" type="search" placeholder="Search plugins: name, what it does, a capability" aria-label="Search plugins" autocomplete="off">
+<div class="chips" role="group" aria-label="Tier">
+<button type="button" data-tier="" aria-pressed="true">All</button>
+<button type="button" data-tier="official" aria-pressed="false">Official</button>
+<button type="button" data-tier="community" aria-pressed="false">Community</button>
+</div>
+</div>
+</div></div>
+<main>
+<p class="count" id="count" aria-live="polite">1 plugin</p>
+<div id="list"><article class="plugin" id="microwakeword" data-tier="official" data-words="microwakeword microwakeword the open wake word engine of esphome&#x27;s voice satellites, with models you add. it hears the wake word less reliably than amazon&#x27;s engine. hassmic official"><header><h2><a href="#microwakeword">microWakeWord</a></h2><span class="tier official">Official</span></header><p class="desc">The open wake word engine of ESPHome&#x27;s voice satellites, with models you add. It hears the wake word less reliably than Amazon&#x27;s engine.</p><p class="who">By hassmic · <a href="https://github.com/Gamer92000/hassmic-plugin-microwakeword" rel="noopener">source</a> · author key <code title="Compare with what the Echo shows before you press its button">40c6 f1ec 861f 8c38</code></p><p class="none">No released version yet. When there is one, it is downloaded here.</p></article></div>
+<p id="empty" class="hidden">No plugin matches.</p>
+
+<section class="howto" id="install">
+<h2>Install</h2>
+<p>An Echo that reaches the internet reads this list itself: on its settings page, Plugins, then "Browse plugins".
+For one that does not, install from a file:</p>
+<ol>
+<li>Download the plugin's <code>.hmp</code> file here.</li>
+<li>Open the Echo's settings page (the "Web UI" address in Home Assistant, or <code>http://&lt;the Echo's address&gt;:28931</code>),
+then Plugins. Switch plugins on if they are off.</li>
+<li>Choose "Install from file…" and pick the download. The Echo checks the package itself and shows what the plugin may do,
+and the author key's fingerprint: it should read as it does here.</li>
+<li>Press the Echo's action button to accept. Nothing is installed without it.</li>
+</ol>
+<p class="small dim">This page is not what keeps you safe: it is not signed. The Echo checks every package itself (its author's
+signature, and the listing by this index's key) and refuses one that does not hold, whatever any page says.
+An official plugin's update that asks for nothing new installs without the button; anything wider asks again.</p>
+</section>
+</main>
+<footer>
+<p>Listed 2026-11-23 23:37 UTC (serial 1795477053). The same list for programs, signed with the index key:
+<a href="index.json">index.json</a> (<a href="index.json.sig">signature</a>), and what was withdrawn:
+<a href="revoked.json">revoked.json</a> (<a href="revoked.json.sig">signature</a>).
+Source of this list: <a href="https://github.com/Gamer92000/hassmic-plugins" rel="noopener">hassmic-plugins</a>.</p>
+</footer>
+<script>
+(function () {
+  var q = document.getElementById("q"), chips = document.querySelectorAll(".chips button"), tier = "";
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".plugin"));
+  var count = document.getElementById("count"), empty = document.getElementById("empty");
+  function apply() {
+    var words = q.value.toLowerCase().split(/\s+/).filter(Boolean), shown = 0;
+    cards.forEach(function (c) {
+      var hit = (!tier || c.dataset.tier === tier) && words.every(function (w) { return c.dataset.words.indexOf(w) >= 0; });
+      c.classList.toggle("hidden", !hit); if (hit) shown++;
+    });
+    count.textContent = shown === cards.length ? cards.length + (cards.length === 1 ? " plugin" : " plugins")
+                                                : shown + " of " + cards.length + " plugins";
+    empty.classList.toggle("hidden", shown > 0 || cards.length === 0);
+  }
+  chips.forEach(function (b) {
+    b.addEventListener("click", function () {
+      tier = b.dataset.tier;
+      chips.forEach(function (o) { o.setAttribute("aria-pressed", o === b ? "true" : "false"); });
+      apply();
+    });
+  });
+  q.addEventListener("input", function () {
+    apply();       /* the search in the address, to share; a plugin's own #id link is left alone until one types */
+    try { history.replaceState(null, "", q.value ? "#q=" + encodeURIComponent(q.value) : location.pathname + location.search); } catch (e) {}
+  });
+  document.addEventListener("click", function (ev) {
+    var b = ev.target.closest && ev.target.closest(".copy"); if (!b) return;
+    var done = function () { var t = b.textContent; b.textContent = "Copied"; setTimeout(function () { b.textContent = t; }, 1200); };
+    if (navigator.clipboard) navigator.clipboard.writeText(b.dataset.copy).then(done, function () {});
+  });
+  var m = /^#q=(.*)$/.exec(location.hash);
+  if (m) { try { q.value = decodeURIComponent(m[1]); } catch (e) {} }
+  apply();
+})();
+</script>
+</body>
+</html>
