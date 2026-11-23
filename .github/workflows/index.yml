@@ -1,0 +1,233 @@
+# Every pull request and push: the entries checked, every package fetched (each plugin's own release asset, official
+# and community alike) and checked against its entry, its attestation verified (tools/attest.py: the plugin's own
+# repository's GitHub Actions built it at the entry's commit on a runner GitHub hosts; gh attestation verify, with
+# this run's read-only token for GitHub's API), the site built with a throwaway key's listings (job "check"; a pull
+# request: --strict, a version left out is an error).  Nothing is built here: the index lists.
+# A pull request: each community version the published site does not have run in the harness (job "smoke": a smoke
+# test of a stranger's program, in bubblewrap under qemu-arm; no secret, no write permission, no token left in its
+# checkout, and nothing of it reaches another job).  Publishing never runs it, nor anything else of a package.
+# Every pull request and push, apart: the reading list's copies and the workflows an author starts from, in the
+# sibling repositories as they are now (job "siblings": no job needs it, so a sibling's moving branch never holds a
+# publish back).
+# A push to main publishes, the whole site, signed (the index key: a secret of the environment "index",
+# INDEX_SIGNING_KEY = base64 of secrets/index.key, which admits main only; only the publishing job names it, and it
+# runs this repository's own tool from main and nothing a package or a pull request brought: packages are read and
+# their attestations verified by gh, never run, never built there): job "publish", right after "check".
+# The published branch is also "the site as it is now": serials only grow against it (tools/published.sh).
+# Only the newest commit publishes, and runs never undo each other (a review of 01e80b8: a late run of an older commit
+# put its older tree over a newer commit's site, one serial higher):
+#   - "publish" runs only while this run's commit is the head of main (git ls-remote: "check"'s last step, before the
+#     job takes its place in its queue), asks again as its first step once it has its turn (one that waited while a
+#     newer run published skips the rest, the build too: never red for a serial that does not grow), and
+#     tools/publish.sh asks again right before it pushes: a run of an older commit skips publishing and says so;
+#   - the push replaces gh-pages only where it is still what the site was built on (tools/published.sh's
+#     previous.ref, git push --force-with-lease): no publish overwrites one that came in between;
+#   - index.py build --bump raises the serial only over a site this same commit made (its signed built-from.txt), or
+#     one this commit descends from (git merge-base; the jobs that build the site check out the whole history);
+#   - one publish at a time, in a concurrency group of its own, a newer one waiting replacing an older one waiting;
+#   - a cancelled run publishes nothing more (!cancelled(), never always()).
+# Runners: ubuntu-24.04, named, never -latest.  gh is never the runner's own (GitHub raises the image's when it likes,
+# and a gh that words its no's otherwise is read as no verdict): tools/gh.sh downloads the one release attest.py's
+# reading is held to, checked by its SHA-256 (the version named there alone), and INDEX_GH names it to index.py
+# (nothing else names INDEX_GH, nothing goes on past that step's failure, and attest.py takes the word of no gh
+# whose --version is another: tests/test_workflow.py, tests/test_attest.py).
+# Under nektos/act everything runs except the push, which only says what it would do (the head's gates let it by).
+# Every action is pinned by its commit (the tag it was in a comment beside it): a tag moved in the action's own
+# repository changes nothing that runs here, in the job that holds the signing key least of all.  Raised by hand.
+name: index
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      head: ${{ steps.head.outputs.head }}
+    steps:
+      # (the whole history: make site's --bump asks git whether this commit descends from the published site's)
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # what the tool's tests run the harness in: bubblewrap and qemu-arm (Ubuntu restricts unprivileged user
+      # namespaces by default, lifted here: a sysctl that fails fails the job, never "|| true", in "smoke" too; under
+      # act the host's kernel is the container's, its own business)
+      - name: Sandbox, qemu
+        run: |
+          echo 'man-db man-db/auto-update boolean false' | sudo debconf-set-selections
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap qemu-user
+          [ -n "$ACT" ] || sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Entries and the tool's tests
+        run: make check
+      - name: The site as it is published
+        run: sh tools/published.sh previous
+      # (gh by its SHA-256, tools/gh.sh; after make check, whose tests name a stand-in gh of their own)
+      - name: GitHub's CLI
+        run: |
+          gh=$(sh tools/gh.sh "$RUNNER_TEMP/gh")
+          echo "INDEX_GH=$gh" >> "$GITHUB_ENV"
+      # every package fetched and checked, its attestation verified (gh, with this run's read-only token): what
+      # "publish" lists, by a throwaway key.  A pull request: a version left out is an error
+      - name: Site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: make site PREVIOUS=previous ${{ github.event_name == 'pull_request' && 'STRICT=1' || '' }}
+      # whether this run's commit is still the head of the branch: "publish" runs only then (a later push's run
+      # publishes; this one's publish is skipped before it takes a place in the publishing queue)
+      - name: The branch's head
+        id: head
+        if: github.event_name != 'pull_request'
+        run: |
+          h=$(git ls-remote "https://github.com/$GITHUB_REPOSITORY" "$GITHUB_REF"); h=${h%%[[:space:]]*}
+          if [ "$h" = "$GITHUB_SHA" ] || [ -n "$ACT" ]; then echo head=true >> "$GITHUB_OUTPUT"; else echo head=false >> "$GITHUB_OUTPUT"; echo "$GITHUB_REF is at ${h:-nothing}, not at this run's $GITHUB_SHA: a newer run publishes, this one does not"; fi
+
+  # The reading list's other six copies, the workflows an author starts from and the authors' copies of the index's
+  # reader (tests/test_reading.py, tests/test_references.py): hassmic's two docs, the plugin template's and
+  # microWakeWord's README, workflows and tools/workflow_test.py, each repository's default branch as it is now (a
+  # words check: no ref is a pin here), those files alone (sparse), no credentials left.  --require: a tree that is
+  # not there fails it (make check skips it on a PC without them; a review of dc75e14: in CI it never saw more than
+  # this repository's two copies).  A job of its own that no job needs, run for every push and pull request, its
+  # failure shown on the run: a sibling's branch moves when it likes, and an edit of the reading list that lands there
+  # before here, or a sibling renamed or made private, fails this job and never a publish, the revocation list's least
+  # of all (a review of 810b9e9)
+  siblings:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          repository: Gamer92000/echo-dot-assist
+          path: siblings/echo-dot-assist
+          sparse-checkout: |
+            docs/plugins.md
+            docs/SECURITY.md
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          repository: Gamer92000/hassmic-plugin-template
+          path: siblings/hassmic-plugin-template
+          sparse-checkout: |
+            README.md
+            .github/workflows/release.yml
+            .github/workflows/build.yml
+            tools/workflow_test.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          repository: Gamer92000/hassmic-plugin-microwakeword
+          path: siblings/hassmic-plugin-microwakeword
+          sparse-checkout: |
+            README.md
+            .github/workflows/release.yml
+            .github/workflows/build.yml
+            tools/workflow_test.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: The reading list in all eight places, the reader in all three
+        env:
+          HASSMIC: siblings/echo-dot-assist
+          TEMPLATE: siblings/hassmic-plugin-template
+          MWW: siblings/hassmic-plugin-microwakeword
+        run: |
+          python3 tests/test_reading.py --require
+          python3 tests/test_references.py --require
+
+  # A pull request: each community version the published site does not have, its program run in the harness.  A
+  # stranger's program: no secret, no token that writes, no token in the checkout, and all it gives is its log
+  smoke:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+      - name: Sandbox, qemu
+        run: |
+          echo 'man-db man-db/auto-update boolean false' | sudo debconf-set-selections
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap qemu-user
+          [ -n "$ACT" ] || sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: The site as it is published
+        run: sh tools/published.sh previous
+      - name: Community plugins in the harness
+        run: make smoke PREVIOUS=previous
+
+  publish:
+    needs: check
+    # (only while this run's commit is the branch's head: check's last step)
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && needs.check.outputs.head == 'true'
+    runs-on: ubuntu-24.04
+    # (every listed version's attestation verified again at every publish, six at a time, tools/index.py
+    # ATTEST_WORKERS: seconds a version with the site's bundle, so some thousands of versions in this time; README.md
+    # "Where a package comes from" says how it grows)
+    timeout-minutes: 30
+    environment: index
+    permissions:
+      contents: write
+    # (one publish at a time; a newer one waiting replaces an older one waiting: each publishes the whole site)
+    concurrency:
+      group: index-publish-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      # (asked again first, once the job has its turn in its queue: a run's job that waited there while a newer
+      # commit's run published skips every step after this, and so never builds its older tree against the newer
+      # site, which fails, red, as a serial that does not grow)
+      - name: The branch's head, again
+        id: head
+        run: |
+          h=$(git ls-remote "https://github.com/$GITHUB_REPOSITORY" "$GITHUB_REF"); h=${h%%[[:space:]]*}
+          if [ "$h" = "$GITHUB_SHA" ] || [ -n "$ACT" ]; then echo head=true >> "$GITHUB_OUTPUT"; else echo head=false >> "$GITHUB_OUTPUT"; echo "$GITHUB_REF is at ${h:-nothing}, not at this run's $GITHUB_SHA: a newer run publishes, this one does not"; fi
+      # (the whole history: make site's --bump asks git whether this commit descends from the published site's)
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        if: steps.head.outputs.head == 'true'
+        with:
+          fetch-depth: 0
+      - name: The site as it is published
+        if: steps.head.outputs.head == 'true'
+        run: sh tools/published.sh previous
+      - name: GitHub's CLI
+        if: steps.head.outputs.head == 'true'
+        run: |
+          gh=$(sh tools/gh.sh "$RUNNER_TEMP/gh")
+          echo "INDEX_GH=$gh" >> "$GITHUB_ENV"
+      - name: The index key
+        if: steps.head.outputs.head == 'true'
+        env:
+          INDEX_SIGNING_KEY: ${{ secrets.INDEX_SIGNING_KEY }}
+        run: |
+          [ -n "$INDEX_SIGNING_KEY" ] || { echo "::error::secret INDEX_SIGNING_KEY missing in the environment index"; exit 1; }
+          mkdir -p secrets
+          (umask 077; echo "$INDEX_SIGNING_KEY" | base64 -d > secrets/index.key)
+      # every package checked and its attestation verified again (gh, this run's token), listed, signed
+      - name: Site, listed and signed
+        if: steps.head.outputs.head == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          trap 'rm -f secrets/index.key' EXIT
+          python3 tools/index.py check --previous previous
+          make site PREVIOUS=previous
+          make sign
+      - name: Publish
+        if: ${{ !env.ACT && steps.head.outputs.head == 'true' }}
+        env:
+          TOKEN: ${{ github.token }}
+        run: sh tools/publish.sh site previous "https://x-access-token:$TOKEN@github.com/${{ github.repository }}" "$GITHUB_REF" "$GITHUB_SHA"
+      - name: Publish (dry run)
+        if: ${{ env.ACT && steps.head.outputs.head == 'true' }}
+        run: find site -type f | sort

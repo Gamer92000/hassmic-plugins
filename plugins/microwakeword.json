@@ -1,0 +1,10 @@
+{
+  "id": "microwakeword",
+  "name": "microWakeWord",
+  "description": "The open wake word engine of ESPHome's voice satellites, with models you add. It hears the wake word less reliably than Amazon's engine.",
+  "author": "hassmic",
+  "author_key": "9f07fe7357a43b51415d0ec3aa9c446e6c512d89f2e87e01a57278c29b09794d",
+  "tier": "official",
+  "source": "https://github.com/Gamer92000/hassmic-plugin-microwakeword",
+  "versions": []
+}
