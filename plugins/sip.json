@@ -1,0 +1,88 @@
+{
+  "id": "sip",
+  "name": "Phone (SIP)",
+  "description": "The Echo as an extension of your phone system (Asterisk, FreePBX, a Fritz!Box): a doorbell or a phone can ring it, and Home Assistant can have it call one. A call rings until answered at the Echo. G.711, unencrypted: for your own network.",
+  "author": "arpena",
+  "author_key": "578b5fbfe143733e36f67147707d2b21e797817e370fc38017dd3887f475dccd",
+  "tier": "community",
+  "source": "https://github.com/arpena/hassmic-plugin-sip",
+  "versions": [
+    {
+      "version": 1,
+      "commit": "df7f81845bdc25d41e17317f083d2cc28c32924e",
+      "workflow": ".github/workflows/release.yml",
+      "manifest": "a8a2d7f8fdce54bfdcd053afbaef8f22ca4d2fdf98ba031be7a636c07e034ca2",
+      "package": "https://github.com/arpena/hassmic-plugin-sip/releases/download/v1/sip-1.hmp",
+      "signature": "e260b76c5484c501c4f42b5a96f537f9b1a2a697f9180f8bfea7cf3cfe3b9be7d6ea8f44bcf35406297277e5518d9d0d1bd29d0f51614a3dc40c7075fbbc3800",
+      "license_sha256": "f81a78cb6e7302f1348354c22ee711e74cbbc789a998ad9ca46d0fb4e5c8f741",
+      "capabilities": {
+        "net.server": [
+          {
+            "setting": "server",
+            "proto": "udp",
+            "ports": "setting:port"
+          }
+        ],
+        "net.udp": 2,
+        "call": true,
+        "ha.entities": [
+          {
+            "name": "phone",
+            "kind": "text_sensor",
+            "label": "Phone",
+            "icon": "mdi:phone",
+            "page": true
+          },
+          {
+            "name": "phone_with",
+            "kind": "text_sensor",
+            "label": "Phone with",
+            "icon": "mdi:card-account-phone",
+            "page": true
+          },
+          {
+            "name": "line",
+            "kind": "text_sensor",
+            "label": "Phone line",
+            "icon": "mdi:phone-check",
+            "page": true
+          },
+          {
+            "name": "result",
+            "kind": "event",
+            "label": "Phone result",
+            "icon": "mdi:phone-log",
+            "types": [
+              "connected",
+              "ringing",
+              "busy",
+              "declined",
+              "not_answered",
+              "not_found",
+              "cancelled",
+              "failed"
+            ]
+          }
+        ],
+        "ha.actions": [
+          {
+            "name": "call",
+            "label": "Call",
+            "calls": true,
+            "args": [
+              {
+                "name": "number",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "hang_up",
+            "label": "Hang up",
+            "page": true
+          }
+        ]
+      }
+    }
+  ]
+}
