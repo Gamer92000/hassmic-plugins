@@ -1,0 +1,77 @@
+{
+  "id": "speaker-id",
+  "name": "Speaker ID",
+  "description": "Tells which of up to 3 voices spoke to this Echo, learning them by itself from the requests. Home Assistant gets Voice 1, 2 and 3 (on for the last speaker). The audio is not kept and never leaves the Echo.",
+  "author": "bebo-creator",
+  "author_key": "25610beb7acad0a721f6bcf4ed6550ef918001824bac09a3afb477dfbee06c4f",
+  "tier": "community",
+  "source": "https://github.com/bebo-creator/hassmic-plugin-speaker-id",
+  "versions": [
+    {
+      "version": 5,
+      "commit": "8e5ad01387b78799ce4cc52f0836ddcd9fcdcb5f",
+      "workflow": ".github/workflows/release.yml",
+      "manifest": "5d8a5e542bccfe25af8b739dd102512671853e6c794a83fb29a9bb3993fc7818",
+      "package": "https://github.com/bebo-creator/hassmic-plugin-speaker-id/releases/download/v5/speaker-id-5.hmp",
+      "signature": "a32a7588346f7554905cb8d7d0a006beebd6c1b3cd61bdbb6e7d4c4ba27a633bbf875f0d5be6e3b38b94891ac7030095b1849cf41ef83a5520e0d4f26671db07",
+      "license_sha256": "c12f36fcf8e398252466d9575e39f1bebdbe4eee9815a49d790c0e06e5dd8da9",
+      "capabilities": {
+        "files": 16,
+        "storage": 16,
+        "request.audio": true,
+        "ha.entities": [
+          {
+            "name": "voice_1",
+            "kind": "binary_sensor",
+            "label": "Voice 1",
+            "icon": "mdi:account-voice",
+            "page": true
+          },
+          {
+            "name": "voice_2",
+            "kind": "binary_sensor",
+            "label": "Voice 2",
+            "icon": "mdi:account-voice",
+            "page": true
+          },
+          {
+            "name": "voice_3",
+            "kind": "binary_sensor",
+            "label": "Voice 3",
+            "icon": "mdi:account-voice",
+            "page": true
+          },
+          {
+            "name": "statistics",
+            "kind": "text_sensor",
+            "label": "Statistics",
+            "icon": "mdi:chart-box-outline",
+            "page": true
+          }
+        ],
+        "ha.actions": [
+          {
+            "name": "forget_1",
+            "label": "Forget voice 1",
+            "page": true
+          },
+          {
+            "name": "forget_2",
+            "label": "Forget voice 2",
+            "page": true
+          },
+          {
+            "name": "forget_3",
+            "label": "Forget voice 3",
+            "page": true
+          },
+          {
+            "name": "reset",
+            "label": "Forget all voices",
+            "page": true
+          }
+        ]
+      }
+    }
+  ]
+}
